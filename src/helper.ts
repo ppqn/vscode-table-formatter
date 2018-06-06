@@ -58,10 +58,7 @@ export class TableHelper {
     private markdownLeftRegExp: RegExp;
     private markdownRightRegExp: RegExp;
     private markdownCenterRegExp: RegExp;
-    private textileHeaderRegExp: RegExp;
-    private textileLeftRegExp: RegExp;
-    private textileRightRegExp: RegExp;
-    private textileCenterRegExp: RegExp;
+    private textileAttributeRegExp: RegExp;
 
     constructor(config: Setting) {
         // オブジェクトは参照渡し
@@ -87,10 +84,7 @@ export class TableHelper {
         this.markdownRightRegExp = /^-+:$/;
         this.markdownCenterRegExp = /^:-+:$/;
         // Textile
-        this.textileHeaderRegExp = /^_\./;
-        this.textileLeftRegExp = /^<\./;
-        this.textileRightRegExp = /^>\./;
-        this.textileCenterRegExp = /^=\./;
+        this.textileAttributeRegExp = /^ *([<>=_]|[\\\/]\d*)*\./;
     }
 
     dispose() {
@@ -294,6 +288,10 @@ export class TableHelper {
 
             var type = (trimmed.length == 0) ? CellType.CM_Blank : CellType.CM_Content;
             var align = CellAlign.Left;
+            let attribute = {
+                prefix: "",
+                suffix: ""
+            };
 
             switch (formatType) {
                 case TableFormatType.Normal:
@@ -320,29 +318,29 @@ export class TableHelper {
                         align = CellAlign.Center;
                     }
                     // Textile ----------------
-                    else if (this.textileHeaderRegExp.test(trimmed)) {
-                        // ._を削除
-                        trimmed = trim(trimmed.substring(2));
-                        type = CellType.TT_HeaderPrefix;
-                        align = CellAlign.Left;
-                    }
-                    else if (this.textileLeftRegExp.test(trimmed)) {
-                        // <_を削除
-                        trimmed = trim(trimmed.substring(2));
-                        type = CellType.TT_LeftPrefix;
-                        align = CellAlign.Left;
-                    }
-                    else if (this.textileRightRegExp.test(trimmed)) {
-                        // >_を削除
-                        trimmed = trim(trimmed.substring(2));
-                        type = CellType.TT_RightPrefix;
-                        align = CellAlign.Right;
-                    }
-                    else if (this.textileCenterRegExp.test(trimmed)) {
-                        // =_を削除
-                        trimmed = trim(trimmed.substring(2));
-                        type = CellType.TT_CenterPrefix;
-                        align = CellAlign.Center;
+                    else if (this.textileAttributeRegExp.test(trimmed))
+                    {
+                        const match = this.textileAttributeRegExp.exec(trimmed)[0];
+                        const prefix = match.trim();
+                        attribute = {
+                            prefix: prefix,
+                            suffix: ""
+                        }
+                        trimmed = trim(trimmed.substring(match.length));
+                        type = CellType.TT_Attribute;
+
+                        /* right align */
+                        if (/>/.test(prefix)) {
+                            align = CellAlign.Right;
+                        }
+                        /* centered */
+                        else if (/=/.test(prefix)) {
+                            align = CellAlign.Center;
+                        }
+                        /* default to left align */
+                        else {
+                            align = CellAlign.Left;
+                        }
                     }
                     break;
 
@@ -363,7 +361,7 @@ export class TableHelper {
                 //     break;
             }
 
-            list.push(new CellInfo(this.settings, trimmed, obj.delimiter, type, align));
+            list.push(new CellInfo(this.settings, trimmed, obj.delimiter, type, align, 0, attribute));
         }
 
         return { list: list, isAddedBlankHead: obj.isAddedBlankHead };

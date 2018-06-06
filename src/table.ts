@@ -15,10 +15,7 @@ export enum CellType {
     MD_LeftSeparator,
     MD_RightSeparator,
     MD_CenterSeparator,
-    TT_HeaderPrefix,
-    TT_LeftPrefix,
-    TT_RightPrefix,
-    TT_CenterPrefix
+    TT_Attribute
 };
 
 // Cell align
@@ -71,6 +68,12 @@ export interface TableProperty {
     simpleTableHeaderIndexes: Set<number>
 };
 
+/* Used to hold table attributes like prefixes and suffixes that may have been stripped from the main contents */
+export interface TableAtrribute {
+    prefix: string,
+    suffix: string
+}
+
 // Cell info
 export class CellInfo {
     private _settings: Setting;
@@ -88,7 +91,21 @@ export class CellInfo {
     // 左パディング（Textile用）
     private _padding: number;
 
-    constructor(settings: Setting, trimmed: string, delimiter: DelimiterType = DelimiterType.Pipe, type: CellType = CellType.CM_Blank, align: CellAlign = CellAlign.Left, padding: number = 0) {
+    /* The cell attribute */
+    private _attribute: TableAtrribute;
+
+    constructor( settings: Setting,
+                 trimmed: string,
+                 delimiter: DelimiterType = DelimiterType.Pipe,
+                 type: CellType = CellType.CM_Blank,
+                 align: CellAlign = CellAlign.Left,
+                 padding: number = 0,
+                 attribute: TableAtrribute = {
+                     prefix: "",
+                     suffix: ""
+                 }
+               ) {
+        this._attribute = attribute;
         this._settings = settings;
 
         this._string = trimmed;
@@ -99,6 +116,10 @@ export class CellInfo {
         this._type = type;
         this._align = align;
         this._padding = padding;
+    }
+
+    get attribute(): TableAtrribute {
+        return this._attribute;
     }
 
     get string(): string {
@@ -338,10 +359,10 @@ export class TableInfo {
         this._cellGrid.forEach(row => {
             // プレフィックス分のパディングを他の行の同列に設定する
             row.forEach((cell, i) => {
-                if (cell.type == CellType.TT_HeaderPrefix || cell.type == CellType.TT_LeftPrefix || cell.type == CellType.TT_RightPrefix || cell.type == CellType.TT_CenterPrefix) {
+                if (cell.type == CellType.TT_Attribute) {
                     this._cellGrid.forEach(elem => {
                         if (i < elem.length) {
-                            elem[i].setPadding(2);
+                            elem[i].setPadding(cell.attribute.prefix.length);
                         }
                     });
                 }
@@ -381,24 +402,6 @@ export class TableInfo {
                 }
             });
         }
-
-        // Textileの位置揃え
-        this._cellGrid.forEach(row => {
-            // 各セルの位置揃えを変更する
-            row.forEach(cell => {
-                switch (cell.type) {
-                    case CellType.TT_LeftPrefix:
-                        cell.setAlign(CellAlign.Left)
-                        break;
-                    case CellType.TT_RightPrefix:
-                        cell.setAlign(CellAlign.Right)
-                        break;
-                    case CellType.TT_CenterPrefix:
-                        cell.setAlign(CellAlign.Center)
-                        break;
-                }
-            });
-        });
     }
 
     // セルの内容からプロパティの更新

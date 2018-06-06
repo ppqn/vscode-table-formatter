@@ -130,11 +130,6 @@ export class TableFormatter {
 
         let align = cellInfo.align;
         switch (cellInfo.type) {
-            case CellType.TT_HeaderPrefix:
-                // コンフィグ：強制的に中心揃えにする
-                align = CellAlign.Center;
-                break;
-
             case CellType.CM_Blank:
             case CellType.CM_Content:
                 // コンフィグ：強制的に中心揃えにする
@@ -248,24 +243,9 @@ export class TableFormatter {
                     break;
 
                 // Textile ----------------
-                case CellType.TT_HeaderPrefix:
-                    formatted += (i == 0) ? "" : (formattingSize == 0) ? "_." : "_. ";
-                    formatted += this.getAlignedText(cellInfo.string, formattingSize, " ", align);
-                    formatted += this.getDelimiterText(i, cellInfoList.length, cellInfo.delimiter);
-                    break;
-                case CellType.TT_LeftPrefix:
-                    formatted += (i == 0) ? "" : (formattingSize == 0) ? "<." : "<. ";
-                    formatted += this.getAlignedText(cellInfo.string, formattingSize, " ", CellAlign.Left);
-                    formatted += this.getDelimiterText(i, cellInfoList.length, cellInfo.delimiter);
-                    break;
-                case CellType.TT_RightPrefix:
-                    formatted += (i == 0) ? "" : (formattingSize == 0) ? ">." : ">. ";
-                    formatted += this.getAlignedText(cellInfo.string, formattingSize, " ", CellAlign.Right);
-                    formatted += this.getDelimiterText(i, cellInfoList.length, cellInfo.delimiter);
-                    break;
-                case CellType.TT_CenterPrefix:
-                    formatted += (i == 0) ? "" : (formattingSize == 0) ? "=." : "=. ";
-                    formatted += this.getAlignedText(cellInfo.string, formattingSize, " ", CellAlign.Center);
+                case CellType.TT_Attribute:
+                    formatted += (i == 0) ? "" : (formattingSize == 0) ? cellInfo.attribute.prefix : cellInfo.attribute.prefix + " ";
+                    formatted += this.getAlignedText(cellInfo.string, formattingSize, " ", cellInfo.align);
                     formatted += this.getDelimiterText(i, cellInfoList.length, cellInfo.delimiter);
                     break;
 
